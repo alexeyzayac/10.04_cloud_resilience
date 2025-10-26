@@ -1,0 +1,39 @@
+---
+- name: Install and configure Nginx on web servers
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Ensure Nginx is started and enabled
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create custom index.html
+      copy:
+        content: |
+              Hello from {{ inventory_hostname }}!
+              This server is running Nginx on port 80
+              Server IP: {{ ansible_host }}
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Show Nginx status
+      command: systemctl status nginx
+      register: nginx_status
+
+    - name: Display Nginx status
+      debug:
+        var: nginx_status.stdout_lines
